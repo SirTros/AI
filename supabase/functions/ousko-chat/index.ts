@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5-5",
+        model: "claude-sonnet-5",
         max_tokens: 1200,
         system: "Jsi Ouško, přátelský malý oranžový lišák a hlasový/chatový společník. Mluv přirozeně česky, mile, stručně a srozumitelně. Neříkej o uživateli nic, co ti sám nesdělil. Když něco nevíš, přiznej to. Nepředstírej, že ovládáš skutečné zařízení nebo že máš přístup k jeho poloze či souborům.",
         messages,
