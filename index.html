@@ -262,7 +262,7 @@
         if (response.status === 429) throw new Error("Claude API má limit nebo nedostatek kreditu. Zkus to později.");
         throw new Error("Claude API (" + response.status + "): " + detail);
       }
-      const reply = Array.isArray(data.content) ? data.content.filter(part => part.type === "text").map(part => part.text).join("\\n").trim() : "";
+      const reply = Array.isArray(data.content) ? data.content.filter(part => part.type === "text").map(part => part.text).join("\n").trim() : "";
       if (!reply) throw new Error("Claude neposlal textovou odpověď.");
       conversation.messages.push({ role: "assistant", content: reply });
       conversation.updatedAt = Date.now();
@@ -271,7 +271,7 @@
       renderHistory();
     } catch (error) {
       typing.remove();
-      const message = error instanceof TypeError ? "Nepodařilo se spojit se serverem. Zkontroluj připojení a nastavení Supabase." : (error.message || "Nepodařilo se spojit s Ouškem.");
+      const message = error instanceof TypeError ? "Nepodařilo se spojit přímo s Claude API. Zkontroluj připojení a povolení požadavků z prohlížeče." : (error.message || "Nepodařilo se spojit s Ouškem.");
       conversation.messages.push({ role: "assistant", content: "Technická chyba: " + message });
       conversation.updatedAt = Date.now();
       saveConversations();
