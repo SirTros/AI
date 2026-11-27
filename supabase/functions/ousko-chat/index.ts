@@ -4,6 +4,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "https://sirtros.github.io",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
   "Vary": "Origin",
 };
 
@@ -18,7 +19,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Použij POST." }, 405);
 
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return json({ error: "Na serveru zatím není nastavený Claude API klíč (ANTHROPIC_API_KEY)." }, 503);
+  if (!apiKey) return json({ error: "Na serveru zatím není nastavený Claude API klíč (ANTHROPIC_API_KEY). Nastav ho v Supabase → Edge Functions → Secrets." }, 503);
 
   try {
     const body = await req.json();
@@ -44,7 +45,7 @@ Deno.serve(async (req: Request) => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        model: "claude-sonnet-5-5",
         max_tokens: 1200,
         system: "Jsi Ouško, přátelský malý oranžový lišák a hlasový/chatový společník. Mluv přirozeně česky, mile, stručně a srozumitelně. Neříkej o uživateli nic, co ti sám nesdělil. Když něco nevíš, přiznej to. Nepředstírej, že ovládáš skutečné zařízení nebo že máš přístup k jeho poloze či souborům.",
         messages,
@@ -55,7 +56,13 @@ Deno.serve(async (req: Request) => {
     const result = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       console.error("Anthropic request failed:", upstream.status, result?.error?.type ?? "unknown");
-      return json({ error: "Claude API požadavek se nepodařil. Zkontroluj API klíč a dostupnost modelu." }, 502);
+      if (upstream.status === 401 || upstream.status === 403) {
+        return json({ error: "Claude API odmítlo API klíč. Zkontroluj ho v Supabase Secrets." }, 502);
+      }
+      if (upstream.status === 404) {
+        return json({ error: "Claude model nebyl nalezen. Zkontroluj nastavení modelu na serveru." }, 502);
+      }
+      return json({ error: "Claude API požadavek se nepodařil (HTTP " + upstream.status + "). Zkus to prosím znovu." }, 502);
     }
     const reply = Array.isArray(result.content)
       ? result.content.filter((part: { type?: string }) => part.type === "text").map((part: { text?: string }) => part.text ?? "").join("\n").trim()
